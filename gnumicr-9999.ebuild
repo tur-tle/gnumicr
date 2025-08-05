@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit font git-r3
+inherit font git-r3 latex-package
 
 DESCRIPTION="MICR E-13B font for LaTeX and TeX, fork of gnumicr"
 HOMEPAGE="https://github.com/tur-tle/gnumicr"
@@ -37,12 +37,24 @@ src_install() {
     # Install OpenType font(s)
     insinto "${FONTDIR}"
     doins GnuMICR.otf || die "Failed to install GnuMICR.otf"
-    doins GnuMICR.ttf GnuMICR.pfa GnuMICR.pfb GnuMICR.afm GnuMICR.pfm || die
+    #doins GnuMICR.ttf GnuMICR.pfa  GnuMICR.pfb GnuMICR.afm GnuMICR.pfm || die
+    doins GnuMICR.otf GnuMICR.ttf GnuMICR.pfa GnuMICR.pfb GnuMICR.afm GnuMICR.pfm || die
 
     # Install LaTeX style files
+    # or auto generate
+       # Font definition
+    if [[ -f OT1GnuMICR.fd ]]; then
+        einfo "Installing OT1GnuMICR.fd"
+        insinto /usr/share/texmf-site/tex/latex/${PN}
+        doins OT1GnuMICR.fd
+        else einfo "No OT1GnuMICR.fd skipping."
+    fi
+
     if [[ -f GnuMICR.sty ]]; then
+        einfo "Installing GnuMICR.sty"
         insinto /usr/share/texmf-site/tex/latex/${PN}
         doins GnuMICR.sty
+    else   einfo "No GnuMICR.sty skipping."
     fi
     # Install documentation
     #dodoc README.md
@@ -51,6 +63,7 @@ src_install() {
 
 pkg_postinst() {
     # Rebuild TeX and font caches
-    mktexlsr
+    latex-package_rehash
+    mktexlsr # needed?
     fc-cache -f
 }
