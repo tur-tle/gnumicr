@@ -16,54 +16,82 @@ IUSE=""
 
 DEPEND="dev-texlive/texlive-fontsrecommended"
 RDEPEND="${DEPEND}"
-BDEPEND=""
+BDEPEND="app-text/texlive-core"
 
 FONTDIR="/usr/share/fonts/opentype/${PN}"
-#S="${WORKDIR}/${PN}"  # Correct source directory after git clone
+
 #${PN} expands to just the package name (here: gnumicr).
-#${P} expands to the package name and version (so: gnumicr-9999 for a live ebuild).
+#${P} expands to the package name and version (gnumicr-9999 for a live ebuild).
 S="${WORKDIR}/${P}"
 
 src_prepare() {
     einfo "S is set to: ${S}"
     default
+
+    # Generate the .fd file
+    cat > OT1GnuMICR.fd <<-EOF || die
+        \\ProvidesFile{OT1GnuMICR.fd}[2025/08/05 Font definitions for OT1/GnuMICR]
+        \\DeclareFontFamily{OT1}{GnuMICR}{}
+        \\DeclareFontShape{OT1}{GnuMICR}{m}{n}{
+            <-> GnuMICR
+        }{}
+EOF
+
+    # Generate the .sty file
+    cat > GnuMICR.sty <<-EOF || die
+        \\NeedsTeXFormat{LaTeX2e}
+        \\ProvidesPackage{micr}[2025/08/05 MICR E-13B font support]
+
+        \\newcommand{\\MICRfont}{%
+          \\fontfamily{GnuMICR}\\selectfont
+        }
+
+        \\newcommand{\\micr}[1]{{\\MICRfont #1}}
+EOF
 }
 
-src_unpack() {
-    git-r3_src_unpack
+src_compile() {
+     einfo "Generating the .tfm (TeX font metric) file ..."
+    afm2tfm GnuMICR.afm -T T1-WGL4.enc GnuMICR.tfm || die "afm2tfm failed"
 }
 
 src_install() {
-    # Install OpenType font(s)
+     einfo "Installing OpenType fonts ..."
     insinto "${FONTDIR}"
     doins GnuMICR.otf || die "Failed to install GnuMICR.otf"
-    #doins GnuMICR.ttf GnuMICR.pfa  GnuMICR.pfb GnuMICR.afm GnuMICR.pfm || die
-    doins GnuMICR.otf GnuMICR.ttf GnuMICR.pfa GnuMICR.pfb GnuMICR.afm GnuMICR.pfm || die
+    doins GnuMICR.{ttf,pfa,pfb,afm,pfm} || die
 
-    # Install LaTeX style files
-    # or auto generate
+    # Install TFM into TeX font tree
+    insinto /usr/share/texmf-site/fonts/tfm/${PN}
+    doins GnuMICR.tfm || ewarn " Failed to install GnuMICR.tfm into TeX font tree at /usr/share/texmf-site/fonts/tfm/${PN}"
+
+    # Install LaTeX style and font definition files
        # Font definition
     if [[ -f OT1GnuMICR.fd ]]; then
-        einfo "Installing OT1GnuMICR.fd"
-        insinto /usr/share/texmf-site/tex/latex/${PN}
+        elog "Installing OT1GnuMICR.fd"
+    insinto /usr/share/texmf-site/tex/latex/${PN}
         doins OT1GnuMICR.fd
-        else einfo "No OT1GnuMICR.fd skipping."
+        else ewarn "Warning OT1GnuMICR.fd skipping."
     fi
 
     if [[ -f GnuMICR.sty ]]; then
-        einfo "Installing GnuMICR.sty"
+        elog "Installing GnuMICR.sty"
         insinto /usr/share/texmf-site/tex/latex/${PN}
         doins GnuMICR.sty
-    else   einfo "No GnuMICR.sty skipping."
+    else  ewarn "Warning GnuMICR.sty skipping."
     fi
     # Install documentation
-    #dodoc README.md
     dodoc README
 }
 
 pkg_postinst() {
-    # Rebuild TeX and font caches
     latex-package_rehash
-    mktexlsr # needed?
+    mktexlsr
+    fc-cache -f
+}
+
+pkg_postrm() {
+    latex-package_rehash
+    mktexlsr
     fc-cache -f
 }
