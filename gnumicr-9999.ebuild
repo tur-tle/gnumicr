@@ -40,9 +40,9 @@ src_install() {
     doins GnuMICR.ttf GnuMICR.pfa GnuMICR.pfb GnuMICR.afm GnuMICR.pfm || die
 
     # Install LaTeX style files
-    if [[ -d tex ]]; then
+    if [[ -f GnuMICR.sty ]]; then
         insinto /usr/share/texmf-site/tex/latex/${PN}
-        doins tex/*.sty
+        doins GnuMICR.sty
     fi
     # Install documentation
     #dodoc README.md
