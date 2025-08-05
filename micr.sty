@@ -1,0 +1,9 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{micr}[2025/08/05 MICR E-13B font support]
+
+\newcommand{\MICRfont}{%
+  \fontfamily{GnuMICR}\selectfont
+}
+
+% Shortcut command
+\newcommand{\micr}[1]{{\MICRfont #1}}
