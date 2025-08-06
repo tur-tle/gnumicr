@@ -65,6 +65,8 @@ src_install() {
     insinto /usr/share/texmf-site/fonts/tfm/${PN}
     doins GnuMICR.tfm || ewarn " Failed to install GnuMICR.tfm into TeX font tree at /usr/share/texmf-site/fonts/tfm/${PN}"
 
+    insinto /usr/share/texmf-site/fonts/map/dvips/${PN}
+    doins GnuMICR.map || ewarn " Failed to install GnuMICR.map to /usr/share/texmf-site/fonts/map/dvips/${PN}"
     # Install LaTeX style and font definition files
        # Font definition
     if [[ -f OT1GnuMICR.fd ]]; then
@@ -86,11 +88,13 @@ src_install() {
 
 pkg_postinst() {
     latex-package_rehash
+    updmap-sys --enable Map=GnuMICR.map
     mktexlsr
     fc-cache -f
 }
 
 pkg_postrm() {
+    updmap-sys --disable GnuMICR.map
     latex-package_rehash
     mktexlsr
     fc-cache -f
