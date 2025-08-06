@@ -19,9 +19,6 @@ RDEPEND="${DEPEND}"
 BDEPEND="app-text/texlive-core"
 
 FONTDIR="/usr/share/fonts/opentype/${PN}"
-
-#${PN} expands to just the package name (here: gnumicr).
-#${P} expands to the package name and version (gnumicr-9999 for a live ebuild).
 S="${WORKDIR}/${P}"
 
 src_prepare() {
@@ -48,53 +45,48 @@ EOF
 
         \\newcommand{\\micr}[1]{{\\MICRfont #1}}
 EOF
+
+    # Generate font map file
+    cat > GnuMICR.map <<-EOF || die
+        GnuMICR GnuMICR <GnuMICR.pfb
+EOF
 }
 
 src_compile() {
-     einfo "Generating the .tfm (TeX font metric) file ..."
+    einfo "Generating the .tfm (TeX font metric) file ..."
     afm2tfm GnuMICR.afm -T T1-WGL4.enc GnuMICR.tfm || die "afm2tfm failed"
 }
 
 src_install() {
-     einfo "Installing OpenType fonts ..."
+    einfo "Installing OpenType and supporting font formats ..."
     insinto "${FONTDIR}"
-    doins GnuMICR.otf || die "Failed to install GnuMICR.otf"
-    doins GnuMICR.{ttf,pfa,pfb,afm,pfm} || die
+    doins GnuMICR.{otf,ttf,pfa,pfb,afm,pfm} || die
 
-    # Install TFM into TeX font tree
+    einfo "Installing TFM and map files ..."
     insinto /usr/share/texmf-site/fonts/tfm/${PN}
-    doins GnuMICR.tfm || ewarn " Failed to install GnuMICR.tfm into TeX font tree at /usr/share/texmf-site/fonts/tfm/${PN}"
+    doins GnuMICR.tfm || die "Failed to install GnuMICR.tfm"
 
     insinto /usr/share/texmf-site/fonts/map/dvips/${PN}
-    doins GnuMICR.map || ewarn " Failed to install GnuMICR.map to /usr/share/texmf-site/fonts/map/dvips/${PN}"
-    # Install LaTeX style and font definition files
-       # Font definition
-    if [[ -f OT1GnuMICR.fd ]]; then
-        elog "Installing OT1GnuMICR.fd"
-    insinto /usr/share/texmf-site/tex/latex/${PN}
-        doins OT1GnuMICR.fd
-        else ewarn "Warning OT1GnuMICR.fd skipping."
-    fi
+    doins GnuMICR.map || die "Failed to install GnuMICR.map"
 
-    if [[ -f GnuMICR.sty ]]; then
-        elog "Installing GnuMICR.sty"
-        insinto /usr/share/texmf-site/tex/latex/${PN}
-        doins GnuMICR.sty
-    else  ewarn "Warning GnuMICR.sty skipping."
-    fi
-    # Install documentation
+    einfo "Installing LaTeX .sty and .fd files ..."
+    insinto /usr/share/texmf-site/tex/latex/${PN}
+    doins OT1GnuMICR.fd GnuMICR.sty || die
+
     dodoc README
 }
 
 pkg_postinst() {
+    einfo "Rebuilding TeX and font caches ..."
     latex-package_rehash
-    updmap-sys --enable Map=GnuMICR.map
     mktexlsr
     fc-cache -f
+    updmap-sys --enable Map=GnuMICR.map || ewarn "Failed to enable GnuMICR.map"
 }
 
 pkg_postrm() {
-    updmap-sys --disable GnuMICR.map
+    einfo "Cleaning up font map and cache ..."
+    updmap-sys --disable GnuMICR.map || ewarn "Failed to disable GnuMICR.map"
     latex-package_rehash
     mktexlsr
     fc-cache -f
