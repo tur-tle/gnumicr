@@ -73,6 +73,19 @@ src_install() {
     insinto /usr/share/texmf-site/tex/latex/${PN}
     doins OT1GnuMICR.fd GnuMICR.sty || die
 
+    # Type 1 + AFM into texmf-site so kpathsea can find them
+    insinto /usr/share/texmf-site/fonts/type1/${PN}
+    doins GnuMICR.pfb || die
+
+    insinto /usr/share/texmf-site/fonts/afm/${PN}
+    doins GnuMICR.afm || die
+
+
+    #Install OTF/TTF into the system font dir:
+    insinto "${FONTDIR}"
+    doins GnuMICR.{otf,ttf,pfa,pfm} || die
+
+    # Install readme
     dodoc README
 }
 
@@ -81,12 +94,17 @@ pkg_postinst() {
     latex-package_rehash
     mktexlsr
     fc-cache -f
-    updmap-sys --enable Map=GnuMICR.map || ewarn "Failed to enable GnuMICR.map"
+    #updmap-sys --enable Map=GnuMICR.map || ewarn "Failed to enable GnuMICR.map"
+    if [ -x /usr/bin/updmap-sys ]; then
+        updmap-sys --enable Map=GnuMICR.map || ewarn "Failed to enable GnuMICR.map"
+    fi
 }
 
 pkg_postrm() {
     einfo "Cleaning up font map and cache ..."
-    updmap-sys --disable GnuMICR.map || ewarn "Failed to disable GnuMICR.map"
+    if [ -x /usr/bin/updmap-sys ]; then
+        updmap-sys --disable GnuMICR.map || ewarn "Failed to disable GnuMICR.map"
+    fi
     latex-package_rehash
     mktexlsr
     fc-cache -f
