@@ -15,24 +15,28 @@
 \newcommand{\MICRDash}{\MICR{D}}            % internal separator
 \begin{document}
 
-Hello world this is a MICR test:
-\\
-MICR E-13B font of 14 characters. \\
-1-0:\\
-\micr{1234567890}\\
-Per ISO 1004-1:2013\\
-The 4 control characters in order are:\\
-Transit, Amount,  On-us, and Dash.\\
-A for Symbol 1; Transit \micr{A}\\
-B for Symbol 2; Amount \micr{B}\\
-C For Symbol 3; On-Us \micr{C}\\
-D for Symbol 4; Dash \micr{D}\\
+\begin{flushleft}
+Hello world this is a MICR test.
 
-% Aux on-us (check #) — bracketed:
+MICR E-13B font of 14 characters defined in ISO 1004-1:2013.
+
+1–0:
+\MICR{1234567890}
+
+Per ISO 1004-1:2013
+The 4 control characters in order are:
+\end{flushleft}
+\begin{tabular}{ c c c c }
+ASCII & Symbol & Name & MICR \\
+A & 1  & Transit & \MICR{A} \\
+B & 2 & Amount & \MICR{B} \\
+C &  3 & On-Us & \MICR{C} \\
+D & 4 & Dash  & \MICR{D} \\
+\end{tabular}
+\begin{flushleft}
+
+Sample check layout:\\
 \micr{C}Check\micr{C}   \micr{A}Routing\micr{A}  Account\micr{C} \\
-
-% Routing — bracketed by transit. % Account — digits + trailing on-us:
 \MICROnUs{100123} \MICRTransit{123456789} \MICR{01234567890}\MICROnUsTerm
-
+\end{flushleft}
 \end{document}
-
